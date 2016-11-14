@@ -5,6 +5,7 @@ import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -36,6 +37,7 @@ public class SwipeCaptchaView extends ImageView {
     private Random mRandom;
     private Paint mPaint;
     private Path mCaptchaPath;
+    private PorterDuffXfermode mPorterDuffXfermode;
 
     public SwipeCaptchaView(Context context) {
         this(context, null);
@@ -71,6 +73,7 @@ public class SwipeCaptchaView extends ImageView {
         mRandom = new Random(System.nanoTime());
         mPaint = new Paint();
         mPaint.setColor(0x88000000);
+       // mPaint.setStyle(Paint.Style.STROKE);
         mCaptchaPath = new Path();
         setOnClickListener(new OnClickListener() {
             @Override
@@ -113,14 +116,16 @@ public class SwipeCaptchaView extends ImageView {
         mCaptchaPath.arcTo(oval, 180, 180);
 
         mCaptchaPath.lineTo(mCaptchaX + mCaptchaWidth, mCaptchaY);
-
+        //凹的话，麻烦一点，要利用多次move
+        mCaptchaPath.lineTo(mCaptchaX + mCaptchaWidth, mCaptchaY + gap);
         oval = new RectF(mCaptchaX + mCaptchaWidth - r, mCaptchaY + gap, mCaptchaX + mCaptchaWidth + r, mCaptchaY + gap + r * 2);
-        mCaptchaPath.arcTo(oval, 90, 180);
+        mCaptchaPath.arcTo(oval, 90, 180, true);
+        mCaptchaPath.moveTo(mCaptchaX + mCaptchaWidth, mCaptchaY + gap + r * 2);
         mCaptchaPath.lineTo(mCaptchaX + mCaptchaWidth, mCaptchaY + mCaptchaHeight);
-/*
+
 
         mCaptchaPath.lineTo(mCaptchaX, mCaptchaY + mCaptchaHeight);
-*/
+        mCaptchaPath.close();
 
         //mCaptchaPath.addCircle(x, y, r, Path.Direction.CW);
 
@@ -132,5 +137,27 @@ public class SwipeCaptchaView extends ImageView {
         super.onDraw(canvas);
         /*canvas.drawRect(mCaptchaX, mCaptchaY, mCaptchaX + mCaptchaWidth, mCaptchaY + mCaptchaHeight, mPaint);*/
         canvas.drawPath(mCaptchaPath, mPaint);
+
+
+/*        Rect mSrcRect = new Rect(0, 0, mWidth, mHeight);
+        Rect mDstRect = new Rect(50, 50, 200, 200);
+
+
+        int sc = canvas.saveLayer(0 + getPaddingLeft(), 0 + getPaddingTop(), mWidth - getPaddingRight(), mHeight - getPaddingBottom(), null,
+                Canvas.ALL_SAVE_FLAG);
+        canvas.translate(0,500);
+
+        //设置遮罩模式为，先绘制DST,再绘制SRC,取交集，留下DST
+        mPorterDuffXfermode = new PorterDuffXfermode(PorterDuff.Mode.DST_IN);
+        //绘制波浪图形(图形上部是波浪，下部是矩形) （DST）
+        canvas.drawPath(mCaptchaPath, mPaint);
+        //设置遮罩模式(图像混合模式)
+        mPaint.setXfermode(mPorterDuffXfermode);
+        //绘制用于遮罩的圆形 (SRC)
+        canvas.drawBitmap(((BitmapDrawable) getDrawable()).getBitmap(), mSrcRect, mSrcRect, mPaint);
+        //设置遮罩模式为null
+        mPaint.setXfermode(null);
+        //将这个新图层绘制的bitmap，与上一个图层合并(显示)
+        canvas.restoreToCount(sc);*/
     }
 }
