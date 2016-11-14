@@ -2,7 +2,9 @@ package com.mcxtzhang.captchalib;
 
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.graphics.BlurMaskFilter;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PorterDuffXfermode;
@@ -10,6 +12,7 @@ import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.TypedValue;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
 
@@ -72,8 +75,11 @@ public class SwipeCaptchaView extends ImageView {
 
         mRandom = new Random(System.nanoTime());
         mPaint = new Paint();
-        mPaint.setColor(0x88000000);
-       // mPaint.setStyle(Paint.Style.STROKE);
+        mPaint.setColor(0x77000000);
+        //mPaint.setStyle(Paint.Style.STROKE);
+        // 设置画笔遮罩滤镜
+        mPaint.setMaskFilter(new BlurMaskFilter(20, BlurMaskFilter.Blur.SOLID));
+
         mCaptchaPath = new Path();
         setOnClickListener(new OnClickListener() {
             @Override
@@ -91,14 +97,16 @@ public class SwipeCaptchaView extends ImageView {
         createCaptchaArea();
     }
 
+    int mGap;
+
     //生成验证码区域
     private void createCaptchaArea() {
 
-        int gap = mRandom.nextInt(mCaptchaWidth / 2);
-        gap = mCaptchaWidth / 4;
+        mGap = mRandom.nextInt(mCaptchaWidth / 2);
+        mGap = mCaptchaWidth / 4;
 
-        mCaptchaX = mRandom.nextInt(mWidth - mCaptchaWidth - gap);
-        mCaptchaY = mRandom.nextInt(mHeight - mCaptchaHeight - gap);
+        mCaptchaX = mRandom.nextInt(mWidth - mCaptchaWidth - mGap);
+        mCaptchaY = mRandom.nextInt(mHeight - mCaptchaHeight - mGap);
         Log.d(TAG, "createCaptchaArea() called mWidth:" + mWidth + ", mHeight:" + mHeight + ", mCaptchaX:" + mCaptchaX + ", mCaptchaY:" + mCaptchaY);
 
         mCaptchaPath.reset();
@@ -107,27 +115,32 @@ public class SwipeCaptchaView extends ImageView {
 
         //从左上角开始 绘制一个不规则的阴影
         mCaptchaPath.moveTo(mCaptchaX, mCaptchaY);
-
-
-        mCaptchaPath.lineTo(mCaptchaX + gap, mCaptchaY);
-        //画出凹凸
-        int r = mCaptchaWidth / 2 - gap;
-        RectF oval = new RectF(mCaptchaX + gap, mCaptchaY - (r), mCaptchaX + gap + r * 2, mCaptchaY + (r));
+        mCaptchaPath.lineTo(mCaptchaX + mGap, mCaptchaY);
+        //画出凹凸 由于是多段Path 无法闭合，简直阿西吧
+        int r = mCaptchaWidth / 2 - mGap;
+        RectF oval = new RectF(mCaptchaX + mGap, mCaptchaY - (r), mCaptchaX + mGap + r * 2, mCaptchaY + (r));
         mCaptchaPath.arcTo(oval, 180, 180);
+        mCaptchaPath.lineTo(mCaptchaX + mCaptchaWidth, mCaptchaY);
+        //凹的话，麻烦一点，要利用多次move
+/*        mCaptchaPath.lineTo(mCaptchaX + mCaptchaWidth, mCaptchaY + gap);
+        oval = new RectF(mCaptchaX + mCaptchaWidth - r, mCaptchaY + gap, mCaptchaX + mCaptchaWidth + r, mCaptchaY + gap + r * 2);
+        mCaptchaPath.arcTo(oval, 90, 180, true);
+        mCaptchaPath.moveTo(mCaptchaX + mCaptchaWidth, mCaptchaY + gap + r * 2);*/
+        mCaptchaPath.lineTo(mCaptchaX + mCaptchaWidth, mCaptchaY + mCaptchaHeight);
+        mCaptchaPath.lineTo(mCaptchaX, mCaptchaY + mCaptchaHeight);
+        mCaptchaPath.close();
 
+/*        RectF oval = new RectF(mCaptchaX + gap, mCaptchaY - (r), mCaptchaX + gap + r * 2, mCaptchaY + (r));
+        mCaptchaPath.addArc(oval, 180,180);
         mCaptchaPath.lineTo(mCaptchaX + mCaptchaWidth, mCaptchaY);
         //凹的话，麻烦一点，要利用多次move
         mCaptchaPath.lineTo(mCaptchaX + mCaptchaWidth, mCaptchaY + gap);
         oval = new RectF(mCaptchaX + mCaptchaWidth - r, mCaptchaY + gap, mCaptchaX + mCaptchaWidth + r, mCaptchaY + gap + r * 2);
-        mCaptchaPath.arcTo(oval, 90, 180, true);
-        mCaptchaPath.moveTo(mCaptchaX + mCaptchaWidth, mCaptchaY + gap + r * 2);
+        mCaptchaPath.addArc(oval, 90, 180);
+        mCaptchaPath.moveTo(mCaptchaX + mCaptchaWidth, mCaptchaY + gap + r * 2);*//*
         mCaptchaPath.lineTo(mCaptchaX + mCaptchaWidth, mCaptchaY + mCaptchaHeight);
-
-
         mCaptchaPath.lineTo(mCaptchaX, mCaptchaY + mCaptchaHeight);
-        mCaptchaPath.close();
-
-        //mCaptchaPath.addCircle(x, y, r, Path.Direction.CW);
+        mCaptchaPath.close();*/
 
         invalidate();
     }
@@ -136,6 +149,7 @@ public class SwipeCaptchaView extends ImageView {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         /*canvas.drawRect(mCaptchaX, mCaptchaY, mCaptchaX + mCaptchaWidth, mCaptchaY + mCaptchaHeight, mPaint);*/
+        mPaint.setColor(0x77000000);
         canvas.drawPath(mCaptchaPath, mPaint);
 
 
@@ -159,5 +173,54 @@ public class SwipeCaptchaView extends ImageView {
         mPaint.setXfermode(null);
         //将这个新图层绘制的bitmap，与上一个图层合并(显示)
         canvas.restoreToCount(sc);*/
+
+
+        mPaint.setColor(Color.BLUE);
+
+        int startX = 0 + mDragerOffset;
+        mDragPath.reset();
+        mDragPath.moveTo(startX, mCaptchaY);
+
+        mDragPath.lineTo(startX + mGap, mCaptchaY);
+        //画出凹凸 由于是多段Path 无法闭合，简直阿西吧
+        int r = mCaptchaWidth / 2 - mGap;
+        RectF oval = new RectF(startX + mGap, mCaptchaY - (r), startX + mGap + r * 2, mCaptchaY + (r));
+        mDragPath.arcTo(oval, 180, 180);
+        mDragPath.lineTo(startX + mCaptchaWidth, mCaptchaY);
+        mDragPath.lineTo(startX + mCaptchaWidth, mCaptchaY + mCaptchaHeight);
+        mDragPath.lineTo(startX, mCaptchaY + mCaptchaHeight);
+        mDragPath.close();
+
+        canvas.drawPath(mDragPath, mPaint);
+
+        /*computeCaptchaState();
+
+        mPaint2.setColor(Color.RED);
+        mPaint2.setStyle(Paint.Style.STROKE);
+        canvas.drawRect(mDragRect,mPaint2);
+        canvas.drawRect(mCaptchaRect,mPaint2);*/
+        Log.d(TAG, "onDraw() called with: mDragerOffset = [" + mDragerOffset + "]");
+    }
+
+    Path mDragPath = new Path();
+    int mDragerOffset = 0;
+
+    RectF mDragRect = new RectF();
+    RectF mCaptchaRect = new RectF();
+    Paint mPaint2= new Paint();
+
+/*    private void computeCaptchaState() {
+        mDragRect = new RectF();
+        mCaptchaRect = new RectF();
+        mDragPath.computeBounds(mDragRect, true);
+
+        mCaptchaPath.computeBounds(mCaptchaRect, true);
+
+        Log.d(TAG, "computeCaptchaState() called:mDragRect:" + mDragRect + " , mCaptchaRect:" + mCaptchaRect);
+    }*/
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        return super.onTouchEvent(event);
     }
 }
