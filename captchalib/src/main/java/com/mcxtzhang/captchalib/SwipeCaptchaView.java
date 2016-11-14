@@ -4,6 +4,8 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.TypedValue;
@@ -33,6 +35,7 @@ public class SwipeCaptchaView extends ImageView {
     private int mCaptchaY;
     private Random mRandom;
     private Paint mPaint;
+    private Path mCaptchaPath;
 
     public SwipeCaptchaView(Context context) {
         this(context, null);
@@ -68,6 +71,7 @@ public class SwipeCaptchaView extends ImageView {
         mRandom = new Random(System.nanoTime());
         mPaint = new Paint();
         mPaint.setColor(0x88000000);
+        mCaptchaPath = new Path();
         setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -87,16 +91,46 @@ public class SwipeCaptchaView extends ImageView {
     //生成验证码区域
     private void createCaptchaArea() {
 
+        int gap = mRandom.nextInt(mCaptchaWidth / 2);
+        gap = mCaptchaWidth / 4;
 
-        mCaptchaX = mRandom.nextInt(mWidth - mCaptchaWidth);
-        mCaptchaY = mRandom.nextInt(mHeight - mCaptchaHeight);
+        mCaptchaX = mRandom.nextInt(mWidth - mCaptchaWidth - gap);
+        mCaptchaY = mRandom.nextInt(mHeight - mCaptchaHeight - gap);
         Log.d(TAG, "createCaptchaArea() called mWidth:" + mWidth + ", mHeight:" + mHeight + ", mCaptchaX:" + mCaptchaX + ", mCaptchaY:" + mCaptchaY);
+
+        mCaptchaPath.reset();
+        mCaptchaPath.lineTo(0, 0);
+
+
+        //从左上角开始 绘制一个不规则的阴影
+        mCaptchaPath.moveTo(mCaptchaX, mCaptchaY);
+
+
+        mCaptchaPath.lineTo(mCaptchaX + gap, mCaptchaY);
+        //画出凹凸
+        int r = mCaptchaWidth / 2 - gap;
+        RectF oval = new RectF(mCaptchaX + gap, mCaptchaY - (r), mCaptchaX + gap + r * 2, mCaptchaY + (r));
+        mCaptchaPath.arcTo(oval, 180, 180);
+
+        mCaptchaPath.lineTo(mCaptchaX + mCaptchaWidth, mCaptchaY);
+
+        oval = new RectF(mCaptchaX + mCaptchaWidth - r, mCaptchaY + gap, mCaptchaX + mCaptchaWidth + r, mCaptchaY + gap + r * 2);
+        mCaptchaPath.arcTo(oval, 90, 180);
+        mCaptchaPath.lineTo(mCaptchaX + mCaptchaWidth, mCaptchaY + mCaptchaHeight);
+/*
+
+        mCaptchaPath.lineTo(mCaptchaX, mCaptchaY + mCaptchaHeight);
+*/
+
+        //mCaptchaPath.addCircle(x, y, r, Path.Direction.CW);
+
         invalidate();
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        canvas.drawRect(mCaptchaX, mCaptchaY, mCaptchaX + mCaptchaWidth, mCaptchaY + mCaptchaHeight, mPaint);
+        /*canvas.drawRect(mCaptchaX, mCaptchaY, mCaptchaX + mCaptchaWidth, mCaptchaY + mCaptchaHeight, mPaint);*/
+        canvas.drawPath(mCaptchaPath, mPaint);
     }
 }

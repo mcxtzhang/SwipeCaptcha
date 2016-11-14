@@ -16,7 +16,7 @@
         android:layout_width="200dp"
         android:layout_height="200dp"
         android:scaleType="centerCrop"
-        android:src="@drawable/pic8"
+        android:background="@color/colorPrimary"
         app:captchaHeight="30dp"
         app:captchaWidth="30dp"/>
 </RelativeLayout>
