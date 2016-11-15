@@ -13,8 +13,8 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.MotionEvent;
-import android.view.View;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import java.util.Random;
 
@@ -81,12 +81,9 @@ public class SwipeCaptchaView extends ImageView {
         mPaint.setMaskFilter(new BlurMaskFilter(20, BlurMaskFilter.Blur.SOLID));
 
         mCaptchaPath = new Path();
-        setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                createCaptchaArea();
-            }
-        });
+
+        setClickable(true);
+
     }
 
     @Override
@@ -100,7 +97,7 @@ public class SwipeCaptchaView extends ImageView {
     int mGap;
 
     //生成验证码区域
-    private void createCaptchaArea() {
+    public void createCaptchaArea() {
 
         mGap = mRandom.nextInt(mCaptchaWidth / 2);
         mGap = mCaptchaWidth / 4;
@@ -148,7 +145,6 @@ public class SwipeCaptchaView extends ImageView {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        /*canvas.drawRect(mCaptchaX, mCaptchaY, mCaptchaX + mCaptchaWidth, mCaptchaY + mCaptchaHeight, mPaint);*/
         mPaint.setColor(0x77000000);
         canvas.drawPath(mCaptchaPath, mPaint);
 
@@ -193,13 +189,6 @@ public class SwipeCaptchaView extends ImageView {
 
         canvas.drawPath(mDragPath, mPaint);
 
-        /*computeCaptchaState();
-
-        mPaint2.setColor(Color.RED);
-        mPaint2.setStyle(Paint.Style.STROKE);
-        canvas.drawRect(mDragRect,mPaint2);
-        canvas.drawRect(mCaptchaRect,mPaint2);*/
-        Log.d(TAG, "onDraw() called with: mDragerOffset = [" + mDragerOffset + "]");
     }
 
     Path mDragPath = new Path();
@@ -207,7 +196,7 @@ public class SwipeCaptchaView extends ImageView {
 
     RectF mDragRect = new RectF();
     RectF mCaptchaRect = new RectF();
-    Paint mPaint2= new Paint();
+    Paint mPaint2 = new Paint();
 
 /*    private void computeCaptchaState() {
         mDragRect = new RectF();
@@ -219,8 +208,37 @@ public class SwipeCaptchaView extends ImageView {
         Log.d(TAG, "computeCaptchaState() called:mDragRect:" + mDragRect + " , mCaptchaRect:" + mCaptchaRect);
     }*/
 
+    private int mFirstX;
+
+
+    //模拟验证过程
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                mFirstX = (int) event.getX();
+                break;
+            case MotionEvent.ACTION_MOVE:
+                mDragerOffset = (int) (event.getX() - mFirstX);
+                invalidate();
+                break;
+            case MotionEvent.ACTION_UP:
+                matchCaptcha();
+                break;
+        }
+
         return super.onTouchEvent(event);
+    }
+
+    /**
+     * 校验
+     */
+    public void matchCaptcha() {
+        if (Math.abs(mDragerOffset - mCaptchaX) < TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 3, getResources().getDisplayMetrics())) {
+            Log.d(TAG, "matchCaptcha() true: mDragerOffset:" + mDragerOffset + ", mCaptchaX:" + mCaptchaX);
+            Toast.makeText(getContext(), "恭喜里啊 验证成功 可以搞事情了", Toast.LENGTH_SHORT).show();
+        } else {
+            Log.e(TAG, "matchCaptcha() false: mDragerOffset:" + mDragerOffset + ", mCaptchaX:" + mCaptchaX);
+        }
     }
 }
