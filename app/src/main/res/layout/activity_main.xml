@@ -29,4 +29,9 @@
         android:layout_height="wrap_content"
         android:layout_alignParentRight="true"
         android:text="老板换码"/>
+
+    <com.mcxtzhang.swipecaptcha.CstView
+        android:background="@color/colorAccent"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
 </RelativeLayout>
