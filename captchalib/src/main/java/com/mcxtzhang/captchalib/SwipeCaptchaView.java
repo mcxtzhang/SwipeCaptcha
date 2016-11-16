@@ -112,22 +112,27 @@ public class SwipeCaptchaView extends ImageView {
         post(new Runnable() {
             @Override
             public void run() {
-                createCaptchaArea();
+                createCaptcha();
             }
         });
     }
 
-    int mGap;
 
     //生成验证码区域
-    public void createCaptchaArea() {
+    public void createCaptcha() {
+        createCaptchaPath();
+        craeteMask();
+        invalidate();
+    }
 
-        mGap = mRandom.nextInt(mCaptchaWidth / 2);
-        mGap = mCaptchaWidth / 4;
+    //生成验证码Path
+    private void createCaptchaPath() {
+        int gap = mRandom.nextInt(mCaptchaWidth / 2);
+        gap = mCaptchaWidth / 4;
 
-        mCaptchaX = mRandom.nextInt(mWidth - mCaptchaWidth - mGap);
-        mCaptchaY = mRandom.nextInt(mHeight - mCaptchaHeight - mGap);
-        Log.d(TAG, "createCaptchaArea() called mWidth:" + mWidth + ", mHeight:" + mHeight + ", mCaptchaX:" + mCaptchaX + ", mCaptchaY:" + mCaptchaY);
+        mCaptchaX = mRandom.nextInt(mWidth - mCaptchaWidth - gap);
+        mCaptchaY = mRandom.nextInt(mHeight - mCaptchaHeight - gap);
+        Log.d(TAG, "createCaptchaPath() called mWidth:" + mWidth + ", mHeight:" + mHeight + ", mCaptchaX:" + mCaptchaX + ", mCaptchaY:" + mCaptchaY);
 
         mCaptchaPath.reset();
         mCaptchaPath.lineTo(0, 0);
@@ -135,14 +140,14 @@ public class SwipeCaptchaView extends ImageView {
 
         //从左上角开始 绘制一个不规则的阴影
         mCaptchaPath.moveTo(mCaptchaX, mCaptchaY);
-        mCaptchaPath.lineTo(mCaptchaX + mGap, mCaptchaY);
+        mCaptchaPath.lineTo(mCaptchaX + gap, mCaptchaY);
         //画出凹凸 由于是多段Path 无法闭合，简直阿西吧
-        int r = mCaptchaWidth / 2 - mGap;
-        RectF oval = new RectF(mCaptchaX + mGap, mCaptchaY - (r), mCaptchaX + mGap + r * 2, mCaptchaY + (r));
+        int r = mCaptchaWidth / 2 - gap;
+        RectF oval = new RectF(mCaptchaX + gap, mCaptchaY - (r), mCaptchaX + gap + r * 2, mCaptchaY + (r));
         mCaptchaPath.arcTo(oval, 180, 180);
         mCaptchaPath.lineTo(mCaptchaX + mCaptchaWidth, mCaptchaY);
         //凹的话，麻烦一点，要利用多次move
-/*        mCaptchaPath.lineTo(mCaptchaX + mCaptchaWidth, mCaptchaY + gap);
+       /* mCaptchaPath.lineTo(mCaptchaX + mCaptchaWidth, mCaptchaY + gap);
         oval = new RectF(mCaptchaX + mCaptchaWidth - r, mCaptchaY + gap, mCaptchaX + mCaptchaWidth + r, mCaptchaY + gap + r * 2);
         mCaptchaPath.arcTo(oval, 90, 180, true);
         mCaptchaPath.moveTo(mCaptchaX + mCaptchaWidth, mCaptchaY + gap + r * 2);*/
@@ -161,12 +166,13 @@ public class SwipeCaptchaView extends ImageView {
         mCaptchaPath.lineTo(mCaptchaX + mCaptchaWidth, mCaptchaY + mCaptchaHeight);
         mCaptchaPath.lineTo(mCaptchaX, mCaptchaY + mCaptchaHeight);
         mCaptchaPath.close();*/
+    }
 
-
+    //生成滑块
+    private void craeteMask() {
         mMaspBitmap = getMaskBitmap(((BitmapDrawable) getDrawable()).getBitmap(), mCaptchaPath);
         mMaskShadowBitmap = mMaspBitmap.extractAlpha();
         mDragerOffset = 0;
-        invalidate();
     }
 
 
@@ -265,7 +271,7 @@ public class SwipeCaptchaView extends ImageView {
 
     private void matchSuccess() {
         Toast.makeText(getContext(), "恭喜你啊 验证成功 可以搞事情了", Toast.LENGTH_SHORT).show();
-        createCaptchaArea();
+        createCaptcha();
     }
 
     private void matchFailed() {
