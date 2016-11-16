@@ -7,8 +7,10 @@ import android.graphics.BlurMaskFilter;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.PaintFlagsDrawFilter;
 import android.graphics.Path;
 import android.graphics.PointF;
+import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.drawable.BitmapDrawable;
 import android.util.AttributeSet;
@@ -49,7 +51,8 @@ public class SwipeCaptchaView extends ImageView {
     private PorterDuffXfermode mPorterDuffXfermode;
 
     //滑块Bitmap
-    private Bitmap mMaspBitmap;
+    private Bitmap mMaskBitmap;
+    private Paint mMaskPaint;
     //用于绘制阴影的Paint
     private Paint mMaskShadowPaint;
     private Bitmap mMaskShadowBitmap;
@@ -102,6 +105,10 @@ public class SwipeCaptchaView extends ImageView {
         mMaskShadowPaint.setTextSize(50);
         mMaskShadowPaint.setStyle(Paint.Style.FILL_AND_STROKE);*/
         mMaskShadowPaint.setMaskFilter(new BlurMaskFilter(10, BlurMaskFilter.Blur.SOLID));
+
+        //滑块区域
+        mPorterDuffXfermode = new PorterDuffXfermode(PorterDuff.Mode.SRC_IN);
+        mMaskPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.DITHER_FLAG);
 
         mCaptchaPath = new Path();
 
@@ -201,8 +208,8 @@ public class SwipeCaptchaView extends ImageView {
 
     //生成滑块
     private void craeteMask() {
-        mMaspBitmap = getMaskBitmap(((BitmapDrawable) getDrawable()).getBitmap(), mCaptchaPath);
-        mMaskShadowBitmap = mMaspBitmap.extractAlpha();
+        mMaskBitmap = getMaskBitmap(((BitmapDrawable) getDrawable()).getBitmap(), mCaptchaPath);
+        mMaskShadowBitmap = mMaskBitmap.extractAlpha();
         mDragerOffset = 0;
     }
 
@@ -257,10 +264,10 @@ public class SwipeCaptchaView extends ImageView {
         //canvas.drawPath(mDragPath, mPaint);
 
 
-        if (null != mMaspBitmap && null != mMaskShadowBitmap) {
+        if (null != mMaskBitmap && null != mMaskShadowBitmap) {
             // 先绘制阴影
             canvas.drawBitmap(mMaskShadowBitmap, -mCaptchaX + mDragerOffset, 0, mMaskShadowPaint);
-            canvas.drawBitmap(mMaspBitmap, -mCaptchaX + mDragerOffset, 0, new Paint(Paint.ANTI_ALIAS_FLAG|Paint.DITHER_FLAG));
+            canvas.drawBitmap(mMaskBitmap, -mCaptchaX + mDragerOffset, 0, new Paint(Paint.ANTI_ALIAS_FLAG | Paint.DITHER_FLAG));
         }
 
     }
@@ -319,11 +326,19 @@ public class SwipeCaptchaView extends ImageView {
         Log.e(TAG, " View: width:" + mWidth + ",  height:" + mHeight);
         //把创建的位图作为画板
         Canvas mCanvas = new Canvas(tempBitmap);
-        mCanvas.clipPath(mask);
+        //mCanvas.clipPath(mask);//有锯齿 且无法解决,所以换成XFermode的方法做
+        // 抗锯齿
+        mCanvas.setDrawFilter(new PaintFlagsDrawFilter(0, Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG));
+        // 绘图参数初始化
+
+
+        //绘制用于遮罩的圆形
+        mCanvas.drawPath(mask, mMaskPaint);
+        //设置遮罩模式(图像混合模式)
+        mMaskPaint.setXfermode(mPorterDuffXfermode);
         //考虑到scaleType等因素，要用Matrix对Bitmap进行缩放
-        mCanvas.drawBitmap(mBitmap, getImageMatrix(), null);
+        mCanvas.drawBitmap(mBitmap, getImageMatrix(), mMaskPaint);
+        mMaskPaint.setXfermode(null);
         return tempBitmap;
     }
-
-
 }
