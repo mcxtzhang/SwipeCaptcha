@@ -223,35 +223,7 @@ public class SwipeCaptchaView extends ImageView {
 
 
 
-/*        Rect mSrcRect = new Rect(0, 0, mWidth, mHeight);
-        Rect mDstRect = new Rect(50, 50, 200, 200);
-
-
-        int sc = canvas.saveLayer(0 + getPaddingLeft(), 0 + getPaddingTop(), mWidth - getPaddingRight(), mHeight - getPaddingBottom(), null,
-                Canvas.ALL_SAVE_FLAG);
-        canvas.translate(0,500);
-
-        //设置遮罩模式为，先绘制DST,再绘制SRC,取交集，留下DST
-        mPorterDuffXfermode = new PorterDuffXfermode(PorterDuff.Mode.DST_IN);
-        //绘制波浪图形(图形上部是波浪，下部是矩形) （DST）
-        canvas.drawPath(mCaptchaPath, mPaint);
-        //设置遮罩模式(图像混合模式)
-        mPaint.setXfermode(mPorterDuffXfermode);
-        //绘制用于遮罩的圆形 (SRC)
-        canvas.drawBitmap(((BitmapDrawable) getDrawable()).getBitmap(), mSrcRect, mSrcRect, mPaint);
-        //设置遮罩模式为null
-        mPaint.setXfermode(null);
-        //将这个新图层绘制的bitmap，与上一个图层合并(显示)
-        canvas.restoreToCount(sc);*/
-
-
-/*        mPaint.setColor(Color.BLUE);
-
-        int startX = 0 + mDragerOffset;
-        mDragPath.reset();
-        mDragPath.moveTo(startX, mCaptchaY);
-
-        mDragPath.lineTo(startX + mGap, mCaptchaY);
+/*
         //画出凹凸 由于是多段Path 无法闭合，简直阿西吧
         int r = mCaptchaWidth / 2 - mGap;
         RectF oval = new RectF(startX + mGap, mCaptchaY - (r), startX + mGap + r * 2, mCaptchaY + (r));
@@ -261,13 +233,11 @@ public class SwipeCaptchaView extends ImageView {
         mDragPath.lineTo(startX, mCaptchaY + mCaptchaHeight);
         mDragPath.close();*/
 
-        //canvas.drawPath(mDragPath, mPaint);
-
 
         if (null != mMaskBitmap && null != mMaskShadowBitmap) {
             // 先绘制阴影
             canvas.drawBitmap(mMaskShadowBitmap, -mCaptchaX + mDragerOffset, 0, mMaskShadowPaint);
-            canvas.drawBitmap(mMaskBitmap, -mCaptchaX + mDragerOffset, 0, new Paint(Paint.ANTI_ALIAS_FLAG | Paint.DITHER_FLAG));
+            canvas.drawBitmap(mMaskBitmap, -mCaptchaX + mDragerOffset, 0, null);
         }
 
     }
@@ -329,9 +299,6 @@ public class SwipeCaptchaView extends ImageView {
         //mCanvas.clipPath(mask);//有锯齿 且无法解决,所以换成XFermode的方法做
         // 抗锯齿
         mCanvas.setDrawFilter(new PaintFlagsDrawFilter(0, Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG));
-        // 绘图参数初始化
-
-
         //绘制用于遮罩的圆形
         mCanvas.drawPath(mask, mMaskPaint);
         //设置遮罩模式(图像混合模式)
