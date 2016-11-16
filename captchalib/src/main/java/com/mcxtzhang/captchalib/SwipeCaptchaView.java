@@ -2,6 +2,7 @@ package com.mcxtzhang.captchalib;
 
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.graphics.Bitmap;
 import android.graphics.BlurMaskFilter;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -9,6 +10,7 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
+import android.graphics.drawable.BitmapDrawable;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.TypedValue;
@@ -35,12 +37,23 @@ public class SwipeCaptchaView extends ImageView {
     //验证码的宽高
     private int mCaptchaWidth;
     private int mCaptchaHeight;
+    //验证码的左上角(起点)的x y
     private int mCaptchaX;
     private int mCaptchaY;
     private Random mRandom;
     private Paint mPaint;
+    //验证码 阴影、抠图的Path
     private Path mCaptchaPath;
     private PorterDuffXfermode mPorterDuffXfermode;
+
+    //滑块Bitmap
+    private Bitmap mMaspBitmap;
+    //用于绘制阴影的Paint
+    private Paint mMaskShadowPaint;
+    private Bitmap mMaskShadowBitmap;
+    //滑块的位移
+    private int mDragerOffset;
+
 
     public SwipeCaptchaView(Context context) {
         this(context, null);
@@ -80,6 +93,11 @@ public class SwipeCaptchaView extends ImageView {
         // 设置画笔遮罩滤镜
         mPaint.setMaskFilter(new BlurMaskFilter(20, BlurMaskFilter.Blur.SOLID));
 
+        // 实例化画笔
+        mMaskShadowPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.DITHER_FLAG);
+        mMaskShadowPaint.setColor(Color.DKGRAY);
+        mMaskShadowPaint.setMaskFilter(new BlurMaskFilter(10, BlurMaskFilter.Blur.NORMAL));
+
         mCaptchaPath = new Path();
 
         setClickable(true);
@@ -91,7 +109,12 @@ public class SwipeCaptchaView extends ImageView {
         super.onSizeChanged(w, h, oldw, oldh);
         mWidth = w;
         mHeight = h;
-        createCaptchaArea();
+        post(new Runnable() {
+            @Override
+            public void run() {
+                createCaptchaArea();
+            }
+        });
     }
 
     int mGap;
@@ -139,14 +162,21 @@ public class SwipeCaptchaView extends ImageView {
         mCaptchaPath.lineTo(mCaptchaX, mCaptchaY + mCaptchaHeight);
         mCaptchaPath.close();*/
 
+
+        mMaspBitmap = getMaskBitmap(((BitmapDrawable) getDrawable()).getBitmap(), mCaptchaPath);
+        mMaskShadowBitmap = mMaspBitmap.extractAlpha();
+        mDragerOffset = 0;
         invalidate();
     }
+
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        mPaint.setColor(0x77000000);
-        canvas.drawPath(mCaptchaPath, mPaint);
+        if (mCaptchaPath != null) {
+            canvas.drawPath(mCaptchaPath, mPaint);
+        }
+
 
 
 /*        Rect mSrcRect = new Rect(0, 0, mWidth, mHeight);
@@ -171,7 +201,7 @@ public class SwipeCaptchaView extends ImageView {
         canvas.restoreToCount(sc);*/
 
 
-        mPaint.setColor(Color.BLUE);
+/*        mPaint.setColor(Color.BLUE);
 
         int startX = 0 + mDragerOffset;
         mDragPath.reset();
@@ -185,31 +215,21 @@ public class SwipeCaptchaView extends ImageView {
         mDragPath.lineTo(startX + mCaptchaWidth, mCaptchaY);
         mDragPath.lineTo(startX + mCaptchaWidth, mCaptchaY + mCaptchaHeight);
         mDragPath.lineTo(startX, mCaptchaY + mCaptchaHeight);
-        mDragPath.close();
+        mDragPath.close();*/
 
-        canvas.drawPath(mDragPath, mPaint);
+        //canvas.drawPath(mDragPath, mPaint);
+
+
+        if (null != mMaspBitmap && null != mMaskShadowBitmap) {
+            // 先绘制阴影
+            canvas.drawBitmap(mMaskShadowBitmap, -mCaptchaX + mDragerOffset, 0, mMaskShadowPaint);
+            canvas.drawBitmap(mMaspBitmap, -mCaptchaX + mDragerOffset, 0, null);
+        }
 
     }
 
-    Path mDragPath = new Path();
-    int mDragerOffset = 0;
-
-    RectF mDragRect = new RectF();
-    RectF mCaptchaRect = new RectF();
-    Paint mPaint2 = new Paint();
-
-/*    private void computeCaptchaState() {
-        mDragRect = new RectF();
-        mCaptchaRect = new RectF();
-        mDragPath.computeBounds(mDragRect, true);
-
-        mCaptchaPath.computeBounds(mCaptchaRect, true);
-
-        Log.d(TAG, "computeCaptchaState() called:mDragRect:" + mDragRect + " , mCaptchaRect:" + mCaptchaRect);
-    }*/
 
     private int mFirstX;
-
 
     //模拟验证过程
     @Override
@@ -236,9 +256,35 @@ public class SwipeCaptchaView extends ImageView {
     public void matchCaptcha() {
         if (Math.abs(mDragerOffset - mCaptchaX) < TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 3, getResources().getDisplayMetrics())) {
             Log.d(TAG, "matchCaptcha() true: mDragerOffset:" + mDragerOffset + ", mCaptchaX:" + mCaptchaX);
-            Toast.makeText(getContext(), "恭喜里啊 验证成功 可以搞事情了", Toast.LENGTH_SHORT).show();
+            matchSuccess();
         } else {
             Log.e(TAG, "matchCaptcha() false: mDragerOffset:" + mDragerOffset + ", mCaptchaX:" + mCaptchaX);
+            matchFailed();
         }
+    }
+
+    private void matchSuccess() {
+        Toast.makeText(getContext(), "恭喜你啊 验证成功 可以搞事情了", Toast.LENGTH_SHORT).show();
+        createCaptchaArea();
+    }
+
+    private void matchFailed() {
+        Toast.makeText(getContext(), "你有80%的可能是机器人，现在走还来得及", Toast.LENGTH_SHORT).show();
+        mDragerOffset = 0;
+        invalidate();
+    }
+
+
+    //抠图
+    private Bitmap getMaskBitmap(Bitmap mBitmap, Path mask) {
+        Bitmap tempBitmap = Bitmap.createBitmap(mWidth, mHeight, Bitmap.Config.ARGB_8888);
+        Log.e(TAG, " getMaskBitmap: width:" + mBitmap.getWidth() + ",  height:" + mBitmap.getHeight());
+        Log.e(TAG, " View: width:" + mWidth + ",  height:" + mHeight);
+        //把创建的位图作为画板
+        Canvas mCanvas = new Canvas(tempBitmap);
+        mCanvas.clipPath(mask);
+        //考虑到scaleType等因素，要用Matrix对Bitmap进行缩放
+        mCanvas.drawBitmap(mBitmap, getImageMatrix(), null);
+        return tempBitmap;
     }
 }

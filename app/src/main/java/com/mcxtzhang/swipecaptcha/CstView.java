@@ -44,13 +44,13 @@ public class CstView extends View {
         path.lineTo(200, 200);
         path.lineTo(200, 300);
         path.close();
-        Bitmap rightBitmap = getRightBitmap(BitmapFactory.decodeResource(getResources(), (R.drawable.pic11)), path);
+        Bitmap rightBitmap = getMaskBitmap(BitmapFactory.decodeResource(getResources(), (R.drawable.pic11)), path);
         canvas.drawBitmap(rightBitmap, -100, -100, new Paint());
 
     }
 
     //生成右边的背景
-    private Bitmap getRightBitmap(Bitmap mBitmap, Path mask) {
+    private Bitmap getMaskBitmap(Bitmap mBitmap, Path mask) {
         Bitmap bgBitmap = Bitmap.createBitmap(mBitmap.getWidth(), mBitmap.getHeight(), Bitmap.Config.ARGB_8888);
         Log.e(TAG, " getRightBitmap: " + bgBitmap.getWidth());
         //把创建的位图作为画板

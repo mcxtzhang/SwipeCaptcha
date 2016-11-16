@@ -14,8 +14,8 @@
 
     <com.mcxtzhang.captchalib.SwipeCaptchaView
         android:id="@+id/swipeCaptchaView"
-        android:layout_width="200dp"
-        android:layout_height="200dp"
+        android:layout_width="360dp"
+        android:layout_height="360dp"
         android:background="@color/colorPrimary"
         android:scaleType="centerCrop"
         android:src="@drawable/pic11"
@@ -30,8 +30,8 @@
         android:layout_alignParentRight="true"
         android:text="老板换码"/>
 
-    <com.mcxtzhang.swipecaptcha.CstView
-        android:background="@color/colorAccent"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+    <!--    <com.mcxtzhang.swipecaptcha.CstView
+            android:background="@color/colorAccent"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>-->
 </RelativeLayout>
