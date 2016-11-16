@@ -34,4 +34,14 @@
             android:background="@color/colorAccent"
             android:layout_width="match_parent"
             android:layout_height="match_parent"/>-->
+
+    <!--    <com.mcxtzhang.swipecaptcha.TestSinView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/colorPrimary"/>-->
+
+<!--    <com.mcxtzhang.swipecaptcha.TestThridBerserView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/colorPrimaryDark"/>-->
 </RelativeLayout>

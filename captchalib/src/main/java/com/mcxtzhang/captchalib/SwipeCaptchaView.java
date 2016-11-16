@@ -8,8 +8,8 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.PointF;
 import android.graphics.PorterDuffXfermode;
-import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -19,6 +19,8 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import java.util.Random;
+
+import static com.mcxtzhang.captchalib.DrawHelperUtils.drawPartCircle;
 
 /**
  * 介绍：滑动验证码的View
@@ -87,7 +89,7 @@ public class SwipeCaptchaView extends ImageView {
 
 
         mRandom = new Random(System.nanoTime());
-        mPaint = new Paint();
+        mPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.DITHER_FLAG);
         mPaint.setColor(0x77000000);
         //mPaint.setStyle(Paint.Style.STROKE);
         // 设置画笔遮罩滤镜
@@ -95,8 +97,11 @@ public class SwipeCaptchaView extends ImageView {
 
         // 实例化画笔
         mMaskShadowPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.DITHER_FLAG);
-        mMaskShadowPaint.setColor(Color.DKGRAY);
-        mMaskShadowPaint.setMaskFilter(new BlurMaskFilter(10, BlurMaskFilter.Blur.NORMAL));
+        mMaskShadowPaint.setColor(Color.BLACK);
+/*        mMaskShadowPaint.setStrokeWidth(50);
+        mMaskShadowPaint.setTextSize(50);
+        mMaskShadowPaint.setStyle(Paint.Style.FILL_AND_STROKE);*/
+        mMaskShadowPaint.setMaskFilter(new BlurMaskFilter(10, BlurMaskFilter.Blur.SOLID));
 
         mCaptchaPath = new Path();
 
@@ -128,7 +133,7 @@ public class SwipeCaptchaView extends ImageView {
     //生成验证码Path
     private void createCaptchaPath() {
         int gap = mRandom.nextInt(mCaptchaWidth / 2);
-        gap = mCaptchaWidth / 4;
+        gap = mCaptchaWidth / 3;
 
         mCaptchaX = mRandom.nextInt(mWidth - mCaptchaWidth - gap);
         mCaptchaY = mRandom.nextInt(mHeight - mCaptchaHeight - gap);
@@ -139,20 +144,46 @@ public class SwipeCaptchaView extends ImageView {
 
 
         //从左上角开始 绘制一个不规则的阴影
-        mCaptchaPath.moveTo(mCaptchaX, mCaptchaY);
-        mCaptchaPath.lineTo(mCaptchaX + gap, mCaptchaY);
+        mCaptchaPath.moveTo(mCaptchaX, mCaptchaY);//左上角
+
+
+/*        mCaptchaPath.lineTo(mCaptchaX + gap, mCaptchaY);
         //画出凹凸 由于是多段Path 无法闭合，简直阿西吧
         int r = mCaptchaWidth / 2 - gap;
         RectF oval = new RectF(mCaptchaX + gap, mCaptchaY - (r), mCaptchaX + gap + r * 2, mCaptchaY + (r));
-        mCaptchaPath.arcTo(oval, 180, 180);
-        mCaptchaPath.lineTo(mCaptchaX + mCaptchaWidth, mCaptchaY);
-        //凹的话，麻烦一点，要利用多次move
-       /* mCaptchaPath.lineTo(mCaptchaX + mCaptchaWidth, mCaptchaY + gap);
-        oval = new RectF(mCaptchaX + mCaptchaWidth - r, mCaptchaY + gap, mCaptchaX + mCaptchaWidth + r, mCaptchaY + gap + r * 2);
-        mCaptchaPath.arcTo(oval, 90, 180, true);
-        mCaptchaPath.moveTo(mCaptchaX + mCaptchaWidth, mCaptchaY + gap + r * 2);*/
-        mCaptchaPath.lineTo(mCaptchaX + mCaptchaWidth, mCaptchaY + mCaptchaHeight);
-        mCaptchaPath.lineTo(mCaptchaX, mCaptchaY + mCaptchaHeight);
+        mCaptchaPath.arcTo(oval, 180, 180);*/
+
+        mCaptchaPath.lineTo(mCaptchaX + gap, mCaptchaY);
+        //draw一个随机凹凸的圆
+        drawPartCircle(new PointF(mCaptchaX + gap, mCaptchaY),
+                new PointF(mCaptchaX + gap * 2, mCaptchaY),
+                mCaptchaPath, mRandom.nextBoolean());
+
+
+        mCaptchaPath.lineTo(mCaptchaX + mCaptchaWidth, mCaptchaY);//右上角
+        mCaptchaPath.lineTo(mCaptchaX + mCaptchaWidth, mCaptchaY + gap);
+        //draw一个随机凹凸的圆
+        drawPartCircle(new PointF(mCaptchaX + mCaptchaWidth, mCaptchaY + gap),
+                new PointF(mCaptchaX + mCaptchaWidth, mCaptchaY + gap * 2),
+                mCaptchaPath, mRandom.nextBoolean());
+
+
+        mCaptchaPath.lineTo(mCaptchaX + mCaptchaWidth, mCaptchaY + mCaptchaHeight);//右下角
+        mCaptchaPath.lineTo(mCaptchaX + mCaptchaWidth - gap, mCaptchaY + mCaptchaHeight);
+        //draw一个随机凹凸的圆
+        drawPartCircle(new PointF(mCaptchaX + mCaptchaWidth - gap, mCaptchaY + mCaptchaHeight),
+                new PointF(mCaptchaX + mCaptchaWidth - gap * 2, mCaptchaY + mCaptchaHeight),
+                mCaptchaPath, mRandom.nextBoolean());
+
+
+        mCaptchaPath.lineTo(mCaptchaX, mCaptchaY + mCaptchaHeight);//左下角
+        mCaptchaPath.lineTo(mCaptchaX, mCaptchaY + mCaptchaHeight - gap);
+        //draw一个随机凹凸的圆
+        drawPartCircle(new PointF(mCaptchaX, mCaptchaY + mCaptchaHeight - gap),
+                new PointF(mCaptchaX, mCaptchaY + mCaptchaHeight - gap * 2),
+                mCaptchaPath, mRandom.nextBoolean());
+
+
         mCaptchaPath.close();
 
 /*        RectF oval = new RectF(mCaptchaX + gap, mCaptchaY - (r), mCaptchaX + gap + r * 2, mCaptchaY + (r));
@@ -229,7 +260,7 @@ public class SwipeCaptchaView extends ImageView {
         if (null != mMaspBitmap && null != mMaskShadowBitmap) {
             // 先绘制阴影
             canvas.drawBitmap(mMaskShadowBitmap, -mCaptchaX + mDragerOffset, 0, mMaskShadowPaint);
-            canvas.drawBitmap(mMaspBitmap, -mCaptchaX + mDragerOffset, 0, null);
+            canvas.drawBitmap(mMaspBitmap, -mCaptchaX + mDragerOffset, 0, new Paint(Paint.ANTI_ALIAS_FLAG|Paint.DITHER_FLAG));
         }
 
     }
@@ -293,4 +324,6 @@ public class SwipeCaptchaView extends ImageView {
         mCanvas.drawBitmap(mBitmap, getImageMatrix(), null);
         return tempBitmap;
     }
+
+
 }
