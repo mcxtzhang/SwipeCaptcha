@@ -155,7 +155,7 @@ public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
 
         int width = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 100, getResources().getDisplayMetrics());
         mSuccessAnim = ValueAnimator.ofInt(mWidth + width, 0);
-        mSuccessAnim.setDuration(400);
+        mSuccessAnim.setDuration(500);
         mSuccessAnim.setInterpolator(new FastOutLinearInInterpolator());
         mSuccessAnim.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
