@@ -9,13 +9,16 @@ import android.graphics.Bitmap;
 import android.graphics.BlurMaskFilter;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.PaintFlagsDrawFilter;
 import android.graphics.Path;
 import android.graphics.PointF;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
+import android.graphics.Shader;
 import android.graphics.drawable.BitmapDrawable;
+import android.support.v4.view.animation.FastOutLinearInInterpolator;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.TypedValue;
@@ -66,7 +69,12 @@ public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
     //验证失败的闪烁动画
     private ValueAnimator mFailAnim;
     //验证成功的白光一闪动画
+    private boolean isShowSuccessAnim;
     private ValueAnimator mSuccessAnim;
+    private Paint mSuccessPaint;//画笔
+    private int mSuccessAnimOffset;//动画的offset
+    private Path mSuccessPath;//成功动画 平行四边形Path
+
 
     public SwipeCaptchaView(Context context) {
         this(context, null);
@@ -120,7 +128,13 @@ public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
 
         mCaptchaPath = new Path();
 
-        //动画区域
+
+        setClickable(true);
+
+    }
+
+    //验证动画初始化区域
+    private void createMatchAnim() {
         mFailAnim = ValueAnimator.ofFloat(0, 1);
         mFailAnim.setDuration(100)
                 .setRepeatCount(4);
@@ -139,8 +153,38 @@ public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
             }
         });
 
-        setClickable(true);
+        int width = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 100, getResources().getDisplayMetrics());
+        mSuccessAnim = ValueAnimator.ofInt(mWidth + width, 0);
+        mSuccessAnim.setDuration(400);
+        mSuccessAnim.setInterpolator(new FastOutLinearInInterpolator());
+        mSuccessAnim.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                mSuccessAnimOffset = (int) animation.getAnimatedValue();
+                invalidate();
+            }
+        });
+        mSuccessAnim.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+                isShowSuccessAnim = true;
+            }
 
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                isShowSuccessAnim = false;
+            }
+        });
+        mSuccessPaint = new Paint();
+        mSuccessPaint.setShader(new LinearGradient(0, 0, 100, 0, new int[]{
+                0x11ffffff, 0x88ffffff}, null,
+                Shader.TileMode.MIRROR));
+        mSuccessPath = new Path();
+        mSuccessPath.moveTo(0, 0);
+        mSuccessPath.rLineTo(width, 0);
+        mSuccessPath.rLineTo(width/2, mHeight);
+        mSuccessPath.rLineTo(-width, 0);
+        mSuccessPath.close();
     }
 
     @Override
@@ -148,6 +192,9 @@ public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
         super.onSizeChanged(w, h, oldw, oldh);
         mWidth = w;
         mHeight = h;
+        //动画区域 会用到宽高
+        createMatchAnim();
+
         post(new Runnable() {
             @Override
             public void run() {
@@ -289,6 +336,10 @@ public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
             canvas.drawBitmap(mMaskBitmap, -mCaptchaX + mDragerOffset, 0, null);
         }
 
+        if (isShowSuccessAnim) {
+            canvas.translate(mSuccessAnimOffset, 0);
+            canvas.drawPath(mSuccessPath, mSuccessPaint);
+        }
     }
 
 
@@ -301,6 +352,10 @@ public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
                 onCaptchaMatchCallback.matchSuccess(this);
                 Log.d(TAG, "matchCaptcha() true: mDragerOffset:" + mDragerOffset + ", mCaptchaX:" + mCaptchaX);
                 //matchSuccess();
+                //成功的动画
+                mSuccessAnim.start();
+
+
             } else {
                 Log.e(TAG, "matchCaptcha() false: mDragerOffset:" + mDragerOffset + ", mCaptchaX:" + mCaptchaX);
                 //失败的时候先闪一闪动画 斗鱼是 隐藏-显示 -隐藏 -显示
