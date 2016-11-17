@@ -75,6 +75,9 @@ public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
     private int mSuccessAnimOffset;//动画的offset
     private Path mSuccessPath;//成功动画 平行四边形Path
 
+    //是否处于验证模式，在验证成功后 为false，其余情况为true
+    private boolean isMatchMode;
+
 
     public SwipeCaptchaView(Context context) {
         this(context, null);
@@ -173,6 +176,7 @@ public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
             @Override
             public void onAnimationEnd(Animator animation) {
                 isShowSuccessAnim = false;
+                isMatchMode = false;
             }
         });
         mSuccessPaint = new Paint();
@@ -182,7 +186,7 @@ public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
         mSuccessPath = new Path();
         mSuccessPath.moveTo(0, 0);
         mSuccessPath.rLineTo(width, 0);
-        mSuccessPath.rLineTo(width/2, mHeight);
+        mSuccessPath.rLineTo(width / 2, mHeight);
         mSuccessPath.rLineTo(-width, 0);
         mSuccessPath.close();
     }
@@ -206,9 +210,15 @@ public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
 
     //生成验证码区域
     public void createCaptcha() {
+        resetFlags();
         createCaptchaPath();
         craeteMask();
         invalidate();
+    }
+
+    //重置一些flasg， 开启验证模式
+    private void resetFlags() {
+        isMatchMode = true;
     }
 
     //生成验证码Path
@@ -312,9 +322,10 @@ public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        if (mCaptchaPath != null) {
-            canvas.drawPath(mCaptchaPath, mPaint);
-        }
+        if (isMatchMode) {
+            if (mCaptchaPath != null) {
+                canvas.drawPath(mCaptchaPath, mPaint);
+            }
 
 
 
@@ -329,16 +340,17 @@ public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
         mDragPath.close();*/
 
 
-        //绘制滑块
-        if (null != mMaskBitmap && null != mMaskShadowBitmap && isDrawMask) {
-            // 先绘制阴影
-            canvas.drawBitmap(mMaskShadowBitmap, -mCaptchaX + mDragerOffset, 0, mMaskShadowPaint);
-            canvas.drawBitmap(mMaskBitmap, -mCaptchaX + mDragerOffset, 0, null);
-        }
+            //绘制滑块
+            if (null != mMaskBitmap && null != mMaskShadowBitmap && isDrawMask) {
+                // 先绘制阴影
+                canvas.drawBitmap(mMaskShadowBitmap, -mCaptchaX + mDragerOffset, 0, mMaskShadowPaint);
+                canvas.drawBitmap(mMaskBitmap, -mCaptchaX + mDragerOffset, 0, null);
+            }
 
-        if (isShowSuccessAnim) {
-            canvas.translate(mSuccessAnimOffset, 0);
-            canvas.drawPath(mSuccessPath, mSuccessPaint);
+            if (isShowSuccessAnim) {
+                canvas.translate(mSuccessAnimOffset, 0);
+                canvas.drawPath(mSuccessPath, mSuccessPaint);
+            }
         }
     }
 
@@ -347,7 +359,7 @@ public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
      * 校验
      */
     public void matchCaptcha(final OnCaptchaMatchCallback onCaptchaMatchCallback) {
-        if (null != onCaptchaMatchCallback) {
+        if (null != onCaptchaMatchCallback && isMatchMode) {
             if (Math.abs(mDragerOffset - mCaptchaX) < TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 3, getResources().getDisplayMetrics())) {
                 onCaptchaMatchCallback.matchSuccess(this);
                 Log.d(TAG, "matchCaptcha() true: mDragerOffset:" + mDragerOffset + ", mCaptchaX:" + mCaptchaX);
