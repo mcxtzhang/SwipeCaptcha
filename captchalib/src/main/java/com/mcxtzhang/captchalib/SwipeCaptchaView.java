@@ -16,9 +16,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.TypedValue;
-import android.view.MotionEvent;
 import android.widget.ImageView;
-import android.widget.Toast;
 
 import java.util.Random;
 
@@ -32,7 +30,7 @@ import static com.mcxtzhang.captchalib.DrawHelperUtils.drawPartCircle;
  * 时间： 2016/11/14.
  */
 
-public class SwipeCaptchaView extends ImageView {
+public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
     private static final String TAG = "zxt/" + SwipeCaptchaView.class.getName();
     //控件的宽高
     protected int mWidth;
@@ -243,51 +241,23 @@ public class SwipeCaptchaView extends ImageView {
     }
 
 
-    private int mFirstX;
-
-    //模拟验证过程
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        switch (event.getAction()) {
-            case MotionEvent.ACTION_DOWN:
-                mFirstX = (int) event.getX();
-                break;
-            case MotionEvent.ACTION_MOVE:
-                mDragerOffset = (int) (event.getX() - mFirstX);
-                invalidate();
-                break;
-            case MotionEvent.ACTION_UP:
-                matchCaptcha();
-                break;
-        }
-
-        return super.onTouchEvent(event);
-    }
-
     /**
      * 校验
      */
-    public void matchCaptcha() {
-        if (Math.abs(mDragerOffset - mCaptchaX) < TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 3, getResources().getDisplayMetrics())) {
-            Log.d(TAG, "matchCaptcha() true: mDragerOffset:" + mDragerOffset + ", mCaptchaX:" + mCaptchaX);
-            matchSuccess();
-        } else {
-            Log.e(TAG, "matchCaptcha() false: mDragerOffset:" + mDragerOffset + ", mCaptchaX:" + mCaptchaX);
-            matchFailed();
+    public void matchCaptcha(OnCaptchaMatchCallback onCaptchaMatchCallback) {
+        if (null != onCaptchaMatchCallback) {
+            if (Math.abs(mDragerOffset - mCaptchaX) < TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 3, getResources().getDisplayMetrics())) {
+                onCaptchaMatchCallback.matchSuccess(this);
+                Log.d(TAG, "matchCaptcha() true: mDragerOffset:" + mDragerOffset + ", mCaptchaX:" + mCaptchaX);
+                //matchSuccess();
+            } else {
+                Log.e(TAG, "matchCaptcha() false: mDragerOffset:" + mDragerOffset + ", mCaptchaX:" + mCaptchaX);
+                onCaptchaMatchCallback.matchFailed(this);
+                //matchFailed();
+            }
         }
-    }
 
-    private void matchSuccess() {
-        Toast.makeText(getContext(), "恭喜你啊 验证成功 可以搞事情了", Toast.LENGTH_SHORT).show();
-        createCaptcha();
     }
-
-    private void matchFailed() {
-        Toast.makeText(getContext(), "你有80%的可能是机器人，现在走还来得及", Toast.LENGTH_SHORT).show();
-        mDragerOffset = 0;
-        invalidate();
-    }
-
 
     //抠图
     private Bitmap getMaskBitmap(Bitmap mBitmap, Path mask) {
@@ -307,5 +277,24 @@ public class SwipeCaptchaView extends ImageView {
         mCanvas.drawBitmap(mBitmap, getImageMatrix(), mMaskPaint);
         mMaskPaint.setXfermode(null);
         return tempBitmap;
+    }
+
+
+    @Override
+    public void resetCaptcha() {
+        mDragerOffset = 0;
+        invalidate();
+    }
+
+    @Override
+    public int getMaxSwipeValue() {
+        //return ((BitmapDrawable) getDrawable()).getBitmap().getWidth() - mCaptchaWidth;
+        //返回控件宽度
+        return mWidth - mCaptchaWidth;
+    }
+
+    @Override
+    public void setCurrentSwipeValue(int value) {
+        mDragerOffset = value;
     }
 }
