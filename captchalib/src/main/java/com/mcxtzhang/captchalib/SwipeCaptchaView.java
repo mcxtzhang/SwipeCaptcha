@@ -388,5 +388,6 @@ public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
     @Override
     public void setCurrentSwipeValue(int value) {
         mDragerOffset = value;
+        invalidate();
     }
 }

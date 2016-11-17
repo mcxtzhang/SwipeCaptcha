@@ -32,7 +32,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void matchSuccess(ISwipeCaptcha swipeCaptcha) {
                 Toast.makeText(MainActivity.this, "恭喜你啊 验证成功 可以搞事情了", Toast.LENGTH_SHORT).show();
-                swipeCaptcha.createCaptcha();
+                //swipeCaptcha.createCaptcha();
 
             }
 
