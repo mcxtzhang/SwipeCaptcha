@@ -1,5 +1,8 @@
 package com.mcxtzhang.captchalib;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
@@ -48,6 +51,9 @@ public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
     private Path mCaptchaPath;
     private PorterDuffXfermode mPorterDuffXfermode;
 
+
+    //是否绘制滑块
+    private boolean isDrawMask;
     //滑块Bitmap
     private Bitmap mMaskBitmap;
     private Paint mMaskPaint;
@@ -57,6 +63,10 @@ public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
     //滑块的位移
     private int mDragerOffset;
 
+    //验证失败的闪烁动画
+    private ValueAnimator mFailAnim;
+    //验证成功的白光一闪动画
+    private ValueAnimator mSuccessAnim;
 
     public SwipeCaptchaView(Context context) {
         this(context, null);
@@ -109,6 +119,25 @@ public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
         mMaskPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.DITHER_FLAG);
 
         mCaptchaPath = new Path();
+
+        //动画区域
+        mFailAnim = ValueAnimator.ofFloat(0, 1);
+        mFailAnim.setDuration(100)
+                .setRepeatCount(4);
+        mFailAnim.setRepeatMode(ValueAnimator.REVERSE);
+        mFailAnim.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                float animatedValue = (float) animation.getAnimatedValue();
+                Log.d(TAG, "onAnimationUpdate: " + animatedValue);
+                if (animatedValue < 0.5f) {
+                    isDrawMask = false;
+                } else {
+                    isDrawMask = true;
+                }
+                invalidate();
+            }
+        });
 
         setClickable(true);
 
@@ -209,6 +238,27 @@ public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
         mMaskBitmap = getMaskBitmap(((BitmapDrawable) getDrawable()).getBitmap(), mCaptchaPath);
         mMaskShadowBitmap = mMaskBitmap.extractAlpha();
         mDragerOffset = 0;
+        isDrawMask = true;
+    }
+
+    //抠图
+    private Bitmap getMaskBitmap(Bitmap mBitmap, Path mask) {
+        Bitmap tempBitmap = Bitmap.createBitmap(mWidth, mHeight, Bitmap.Config.ARGB_8888);
+        Log.e(TAG, " getMaskBitmap: width:" + mBitmap.getWidth() + ",  height:" + mBitmap.getHeight());
+        Log.e(TAG, " View: width:" + mWidth + ",  height:" + mHeight);
+        //把创建的位图作为画板
+        Canvas mCanvas = new Canvas(tempBitmap);
+        //mCanvas.clipPath(mask);//有锯齿 且无法解决,所以换成XFermode的方法做
+        // 抗锯齿
+        mCanvas.setDrawFilter(new PaintFlagsDrawFilter(0, Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG));
+        //绘制用于遮罩的圆形
+        mCanvas.drawPath(mask, mMaskPaint);
+        //设置遮罩模式(图像混合模式)
+        mMaskPaint.setXfermode(mPorterDuffXfermode);
+        //考虑到scaleType等因素，要用Matrix对Bitmap进行缩放
+        mCanvas.drawBitmap(mBitmap, getImageMatrix(), mMaskPaint);
+        mMaskPaint.setXfermode(null);
+        return tempBitmap;
     }
 
 
@@ -232,7 +282,8 @@ public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
         mDragPath.close();*/
 
 
-        if (null != mMaskBitmap && null != mMaskShadowBitmap) {
+        //绘制滑块
+        if (null != mMaskBitmap && null != mMaskShadowBitmap && isDrawMask) {
             // 先绘制阴影
             canvas.drawBitmap(mMaskShadowBitmap, -mCaptchaX + mDragerOffset, 0, mMaskShadowPaint);
             canvas.drawBitmap(mMaskBitmap, -mCaptchaX + mDragerOffset, 0, null);
@@ -244,7 +295,7 @@ public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
     /**
      * 校验
      */
-    public void matchCaptcha(OnCaptchaMatchCallback onCaptchaMatchCallback) {
+    public void matchCaptcha(final OnCaptchaMatchCallback onCaptchaMatchCallback) {
         if (null != onCaptchaMatchCallback) {
             if (Math.abs(mDragerOffset - mCaptchaX) < TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 3, getResources().getDisplayMetrics())) {
                 onCaptchaMatchCallback.matchSuccess(this);
@@ -252,33 +303,19 @@ public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
                 //matchSuccess();
             } else {
                 Log.e(TAG, "matchCaptcha() false: mDragerOffset:" + mDragerOffset + ", mCaptchaX:" + mCaptchaX);
-                onCaptchaMatchCallback.matchFailed(this);
+                //失败的时候先闪一闪动画 斗鱼是 隐藏-显示 -隐藏 -显示
+                mFailAnim.addListener(new AnimatorListenerAdapter() {
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        onCaptchaMatchCallback.matchFailed(SwipeCaptchaView.this);
+                    }
+                });
+                mFailAnim.start();
                 //matchFailed();
             }
         }
 
     }
-
-    //抠图
-    private Bitmap getMaskBitmap(Bitmap mBitmap, Path mask) {
-        Bitmap tempBitmap = Bitmap.createBitmap(mWidth, mHeight, Bitmap.Config.ARGB_8888);
-        Log.e(TAG, " getMaskBitmap: width:" + mBitmap.getWidth() + ",  height:" + mBitmap.getHeight());
-        Log.e(TAG, " View: width:" + mWidth + ",  height:" + mHeight);
-        //把创建的位图作为画板
-        Canvas mCanvas = new Canvas(tempBitmap);
-        //mCanvas.clipPath(mask);//有锯齿 且无法解决,所以换成XFermode的方法做
-        // 抗锯齿
-        mCanvas.setDrawFilter(new PaintFlagsDrawFilter(0, Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG));
-        //绘制用于遮罩的圆形
-        mCanvas.drawPath(mask, mMaskPaint);
-        //设置遮罩模式(图像混合模式)
-        mMaskPaint.setXfermode(mPorterDuffXfermode);
-        //考虑到scaleType等因素，要用Matrix对Bitmap进行缩放
-        mCanvas.drawBitmap(mBitmap, getImageMatrix(), mMaskPaint);
-        mMaskPaint.setXfermode(null);
-        return tempBitmap;
-    }
-
 
     @Override
     public void resetCaptcha() {
