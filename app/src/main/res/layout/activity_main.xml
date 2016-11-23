@@ -15,11 +15,10 @@
     <com.mcxtzhang.captchalib.SwipeCaptchaView
         android:id="@+id/swipeCaptchaView"
         android:layout_width="300dp"
-        android:layout_height="150dp"
+        android:layout_height="200dp"
         android:layout_centerHorizontal="true"
-        android:background="@color/colorPrimary"
         android:scaleType="centerCrop"
-        android:src="@drawable/pic11"
+        tools:src="@drawable/pic11"
         app:captchaHeight="30dp"
         app:captchaWidth="30dp"/>
 

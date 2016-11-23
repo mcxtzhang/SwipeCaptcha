@@ -1,5 +1,6 @@
 package com.mcxtzhang.swipecaptcha;
 
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -7,6 +8,9 @@ import android.view.View;
 import android.widget.SeekBar;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.animation.GlideAnimation;
+import com.bumptech.glide.request.target.SimpleTarget;
 import com.mcxtzhang.captchalib.SwipeCaptchaView;
 
 public class MainActivity extends AppCompatActivity {
@@ -62,5 +66,17 @@ public class MainActivity extends AppCompatActivity {
                 mSwipeCaptchaView.matchCaptcha();
             }
         });
+
+        //测试从网络加载图片是否ok
+        Glide.with(this)
+                .load("http://www.investide.cn/data/edata/image/20151201/20151201180507_281.jpg")
+                .asBitmap()
+                .into(new SimpleTarget<Bitmap>() {
+                    @Override
+                    public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
+                        mSwipeCaptchaView.setImageBitmap(resource);
+                        mSwipeCaptchaView.createCaptcha();
+                    }
+                });
     }
 }

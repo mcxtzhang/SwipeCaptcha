@@ -200,6 +200,7 @@ public class SwipeCaptchaView extends ImageView {
 
             @Override
             public void onAnimationEnd(Animator animation) {
+                onCaptchaMatchCallback.matchSuccess(SwipeCaptchaView.this);
                 isShowSuccessAnim = false;
                 isMatchMode = false;
             }
@@ -219,10 +220,12 @@ public class SwipeCaptchaView extends ImageView {
 
     //生成验证码区域
     public void createCaptcha() {
-        resetFlags();
-        createCaptchaPath();
-        craeteMask();
-        invalidate();
+        if (getDrawable() != null) {
+            resetFlags();
+            createCaptchaPath();
+            craeteMask();
+            invalidate();
+        }
     }
 
     //重置一些flasg， 开启验证模式
@@ -304,8 +307,11 @@ public class SwipeCaptchaView extends ImageView {
     //生成滑块
     private void craeteMask() {
         mMaskBitmap = getMaskBitmap(((BitmapDrawable) getDrawable()).getBitmap(), mCaptchaPath);
+        //滑块阴影
         mMaskShadowBitmap = mMaskBitmap.extractAlpha();
+        //拖动的位移重置
         mDragerOffset = 0;
+        //isDrawMask  绘制失败闪烁动画用
         isDrawMask = true;
     }
 
@@ -337,25 +343,13 @@ public class SwipeCaptchaView extends ImageView {
         super.onDraw(canvas);
         //继承自ImageView，所以Bitmap，ImageView已经帮我们draw好了。
         //我只在上面绘制和验证码相关的部分，
+
+        //是否处于验证模式，在验证成功后 为false，其余情况为true
         if (isMatchMode) {
             //首先绘制验证码阴影
             if (mCaptchaPath != null) {
                 canvas.drawPath(mCaptchaPath, mPaint);
             }
-
-
-
-/*
-        //画出凹凸 由于是多段Path 无法闭合，简直阿西吧
-        int r = mCaptchaWidth / 2 - mGap;
-        RectF oval = new RectF(startX + mGap, mCaptchaY - (r), startX + mGap + r * 2, mCaptchaY + (r));
-        mDragPath.arcTo(oval, 180, 180);
-        mDragPath.lineTo(startX + mCaptchaWidth, mCaptchaY);
-        mDragPath.lineTo(startX + mCaptchaWidth, mCaptchaY + mCaptchaHeight);
-        mDragPath.lineTo(startX, mCaptchaY + mCaptchaHeight);
-        mDragPath.close();*/
-
-
             //绘制滑块
             // isDrawMask  绘制失败闪烁动画用
             if (null != mMaskBitmap && null != mMaskShadowBitmap && isDrawMask) {
@@ -363,7 +357,7 @@ public class SwipeCaptchaView extends ImageView {
                 canvas.drawBitmap(mMaskShadowBitmap, -mCaptchaX + mDragerOffset, 0, mMaskShadowPaint);
                 canvas.drawBitmap(mMaskBitmap, -mCaptchaX + mDragerOffset, 0, null);
             }
-            //绘制成功，白光扫过的动画，这一块动画感觉不完美，有提高空间
+            //验证成功，白光扫过的动画，这一块动画感觉不完美，有提高空间
             if (isShowSuccessAnim) {
                 canvas.translate(mSuccessAnimOffset, 0);
                 canvas.drawPath(mSuccessPath, mSuccessPaint);
@@ -377,9 +371,8 @@ public class SwipeCaptchaView extends ImageView {
      */
     public void matchCaptcha() {
         if (null != onCaptchaMatchCallback && isMatchMode) {
-            //这里验证逻辑，是通过比较，拖拽的距离 和 验证码起点x坐标。 3dp以内算是验证成功。
+            //这里验证逻辑，是通过比较，拖拽的距离 和 验证码起点x坐标。 默认3dp以内算是验证成功。
             if (Math.abs(mDragerOffset - mCaptchaX) < mMatchDeviation) {
-                onCaptchaMatchCallback.matchSuccess(this);
                 Log.d(TAG, "matchCaptcha() true: mDragerOffset:" + mDragerOffset + ", mCaptchaX:" + mCaptchaX);
                 //matchSuccess();
                 //成功的动画
@@ -396,17 +389,28 @@ public class SwipeCaptchaView extends ImageView {
 
     }
 
+    /**
+     * 重置验证码滑动距离,(一般用于验证失败)
+     */
     public void resetCaptcha() {
         mDragerOffset = 0;
         invalidate();
     }
 
+    /**
+     * 最大可滑动值
+     * @return
+     */
     public int getMaxSwipeValue() {
         //return ((BitmapDrawable) getDrawable()).getBitmap().getWidth() - mCaptchaWidth;
         //返回控件宽度
         return mWidth - mCaptchaWidth;
     }
 
+    /**
+     * 设置当前滑动值
+     * @param value
+     */
     public void setCurrentSwipeValue(int value) {
         mDragerOffset = value;
         invalidate();
