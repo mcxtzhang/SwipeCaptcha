@@ -36,7 +36,7 @@ import static com.mcxtzhang.captchalib.DrawHelperUtils.drawPartCircle;
  * 时间： 2016/11/14.
  */
 
-public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
+public class SwipeCaptchaView extends ImageView {
     private static final String TAG = "zxt/" + SwipeCaptchaView.class.getName();
     //控件的宽高
     protected int mWidth;
@@ -77,7 +77,6 @@ public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
 
     //是否处于验证模式，在验证成功后 为false，其余情况为true
     private boolean isMatchMode;
-
 
     public SwipeCaptchaView(Context context) {
         this(context, null);
@@ -156,6 +155,13 @@ public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
         mFailAnim.setDuration(100)
                 .setRepeatCount(4);
         mFailAnim.setRepeatMode(ValueAnimator.REVERSE);
+        //失败的时候先闪一闪动画 斗鱼是 隐藏-显示 -隐藏 -显示
+        mFailAnim.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                onCaptchaMatchCallback.matchFailed(SwipeCaptchaView.this);
+            }
+        });
         mFailAnim.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
@@ -364,7 +370,7 @@ public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
     /**
      * 校验
      */
-    public void matchCaptcha(final OnCaptchaMatchCallback onCaptchaMatchCallback) {
+    public void matchCaptcha() {
         if (null != onCaptchaMatchCallback && isMatchMode) {
             //这里验证逻辑，是通过比较，拖拽的距离 和 验证码起点x坐标。 3dp以内算是验证成功。
             if (Math.abs(mDragerOffset - mCaptchaX) < TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 3, getResources().getDisplayMetrics())) {
@@ -377,13 +383,7 @@ public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
 
             } else {
                 Log.e(TAG, "matchCaptcha() false: mDragerOffset:" + mDragerOffset + ", mCaptchaX:" + mCaptchaX);
-                //失败的时候先闪一闪动画 斗鱼是 隐藏-显示 -隐藏 -显示
-                mFailAnim.addListener(new AnimatorListenerAdapter() {
-                    @Override
-                    public void onAnimationEnd(Animator animation) {
-                        onCaptchaMatchCallback.matchFailed(SwipeCaptchaView.this);
-                    }
-                });
+
                 mFailAnim.start();
                 //matchFailed();
             }
@@ -391,22 +391,45 @@ public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
 
     }
 
-    @Override
     public void resetCaptcha() {
         mDragerOffset = 0;
         invalidate();
     }
 
-    @Override
     public int getMaxSwipeValue() {
         //return ((BitmapDrawable) getDrawable()).getBitmap().getWidth() - mCaptchaWidth;
         //返回控件宽度
         return mWidth - mCaptchaWidth;
     }
 
-    @Override
     public void setCurrentSwipeValue(int value) {
         mDragerOffset = value;
         invalidate();
+    }
+
+    public interface OnCaptchaMatchCallback {
+        void matchSuccess(SwipeCaptchaView swipeCaptchaView);
+
+        void matchFailed(SwipeCaptchaView swipeCaptchaView);
+    }
+
+    /**
+     * 验证码验证的回调
+     */
+    private OnCaptchaMatchCallback onCaptchaMatchCallback;
+
+    public OnCaptchaMatchCallback getOnCaptchaMatchCallback() {
+        return onCaptchaMatchCallback;
+    }
+
+    /**
+     * 设置验证码验证回调
+     *
+     * @param onCaptchaMatchCallback
+     * @return
+     */
+    public SwipeCaptchaView setOnCaptchaMatchCallback(OnCaptchaMatchCallback onCaptchaMatchCallback) {
+        this.onCaptchaMatchCallback = onCaptchaMatchCallback;
+        return this;
     }
 }

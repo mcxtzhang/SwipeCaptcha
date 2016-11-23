@@ -2,46 +2,47 @@ package com.mcxtzhang.swipecaptcha;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.SeekBar;
 import android.widget.Toast;
 
-import com.mcxtzhang.captchalib.ISwipeCaptcha;
+import com.mcxtzhang.captchalib.SwipeCaptchaView;
 
 public class MainActivity extends AppCompatActivity {
-    ISwipeCaptcha mSwipeCaptchaView;
-    ISwipeCaptcha.OnCaptchaMatchCallback mOnCaptchaMatchCallback;
-
+    SwipeCaptchaView mSwipeCaptchaView;
     SeekBar mSeekBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        mSwipeCaptchaView = (ISwipeCaptcha) findViewById(R.id.swipeCaptchaView);
+        mSwipeCaptchaView = (SwipeCaptchaView) findViewById(R.id.swipeCaptchaView);
         mSeekBar = (SeekBar) findViewById(R.id.dragBar);
-
         findViewById(R.id.btnChange).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 mSwipeCaptchaView.createCaptcha();
+                mSeekBar.setEnabled(true);
+                mSeekBar.setProgress(0);
             }
         });
-        mOnCaptchaMatchCallback = new ISwipeCaptcha.OnCaptchaMatchCallback() {
+        mSwipeCaptchaView.setOnCaptchaMatchCallback(new SwipeCaptchaView.OnCaptchaMatchCallback() {
             @Override
-            public void matchSuccess(ISwipeCaptcha swipeCaptcha) {
+            public void matchSuccess(SwipeCaptchaView swipeCaptchaView) {
                 Toast.makeText(MainActivity.this, "恭喜你啊 验证成功 可以搞事情了", Toast.LENGTH_SHORT).show();
                 //swipeCaptcha.createCaptcha();
                 mSeekBar.setEnabled(false);
             }
 
             @Override
-            public void matchFailed(ISwipeCaptcha swipeCaptcha) {
+            public void matchFailed(SwipeCaptchaView swipeCaptchaView) {
+                Log.d("zxt", "matchFailed() called with: swipeCaptchaView = [" + swipeCaptchaView + "]");
                 Toast.makeText(MainActivity.this, "你有80%的可能是机器人，现在走还来得及", Toast.LENGTH_SHORT).show();
-                swipeCaptcha.resetCaptcha();
+                swipeCaptchaView.resetCaptcha();
                 mSeekBar.setProgress(0);
             }
-        };
+        });
         mSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
 
             @Override
@@ -57,7 +58,8 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                mSwipeCaptchaView.matchCaptcha(mOnCaptchaMatchCallback);
+                Log.d("zxt", "onStopTrackingTouch() called with: seekBar = [" + seekBar + "]");
+                mSwipeCaptchaView.matchCaptcha();
             }
         });
     }
