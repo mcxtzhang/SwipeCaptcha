@@ -19,21 +19,20 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mSwipeCaptchaView = (ISwipeCaptcha) findViewById(R.id.swipeCaptchaView);
+        mSeekBar = (SeekBar) findViewById(R.id.dragBar);
+
         findViewById(R.id.btnChange).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 mSwipeCaptchaView.createCaptcha();
             }
         });
-
-        mSeekBar = (SeekBar) findViewById(R.id.dragBar);
-
         mOnCaptchaMatchCallback = new ISwipeCaptcha.OnCaptchaMatchCallback() {
             @Override
             public void matchSuccess(ISwipeCaptcha swipeCaptcha) {
                 Toast.makeText(MainActivity.this, "恭喜你啊 验证成功 可以搞事情了", Toast.LENGTH_SHORT).show();
                 //swipeCaptcha.createCaptcha();
-
+                mSeekBar.setEnabled(false);
             }
 
             @Override
@@ -43,8 +42,6 @@ public class MainActivity extends AppCompatActivity {
                 mSeekBar.setProgress(0);
             }
         };
-
-
         mSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
 
             @Override

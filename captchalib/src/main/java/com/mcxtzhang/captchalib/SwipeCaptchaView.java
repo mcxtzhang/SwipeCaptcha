@@ -29,7 +29,7 @@ import java.util.Random;
 import static com.mcxtzhang.captchalib.DrawHelperUtils.drawPartCircle;
 
 /**
- * 介绍：滑动验证码的View
+ * 介绍：仿斗鱼滑动验证码的View
  * 作者：zhangxutong
  * 邮箱：mcxtzhang@163.com
  * 主页：http://blog.csdn.net/zxt0601
@@ -42,7 +42,7 @@ public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
     protected int mWidth;
     protected int mHeight;
 
-    //验证码的宽高
+    //验证码滑块的宽高
     private int mCaptchaWidth;
     private int mCaptchaHeight;
     //验证码的左上角(起点)的x y
@@ -55,7 +55,7 @@ public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
     private PorterDuffXfermode mPorterDuffXfermode;
 
 
-    //是否绘制滑块
+    //是否绘制滑块（验证失败闪烁动画用）
     private boolean isDrawMask;
     //滑块Bitmap
     private Bitmap mMaskBitmap;
@@ -117,7 +117,11 @@ public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
         // 设置画笔遮罩滤镜
         mPaint.setMaskFilter(new BlurMaskFilter(20, BlurMaskFilter.Blur.SOLID));
 
-        // 实例化画笔
+        //滑块区域
+        mPorterDuffXfermode = new PorterDuffXfermode(PorterDuff.Mode.SRC_IN);
+        mMaskPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.DITHER_FLAG);
+
+        // 实例化阴影画笔
         mMaskShadowPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.DITHER_FLAG);
         mMaskShadowPaint.setColor(Color.BLACK);
 /*        mMaskShadowPaint.setStrokeWidth(50);
@@ -125,15 +129,25 @@ public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
         mMaskShadowPaint.setStyle(Paint.Style.FILL_AND_STROKE);*/
         mMaskShadowPaint.setMaskFilter(new BlurMaskFilter(10, BlurMaskFilter.Blur.SOLID));
 
-        //滑块区域
-        mPorterDuffXfermode = new PorterDuffXfermode(PorterDuff.Mode.SRC_IN);
-        mMaskPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.DITHER_FLAG);
-
         mCaptchaPath = new Path();
 
 
-        setClickable(true);
+    }
 
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        mWidth = w;
+        mHeight = h;
+        //动画区域 会用到宽高
+        createMatchAnim();
+
+        post(new Runnable() {
+            @Override
+            public void run() {
+                createCaptcha();
+            }
+        });
     }
 
     //验证动画初始化区域
@@ -180,9 +194,10 @@ public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
             }
         });
         mSuccessPaint = new Paint();
-        mSuccessPaint.setShader(new LinearGradient(0, 0, 100, 0, new int[]{
+        mSuccessPaint.setShader(new LinearGradient(0, 0, width, 0, new int[]{
                 0x11ffffff, 0x88ffffff}, null,
                 Shader.TileMode.MIRROR));
+        //模仿斗鱼 是一个平行四边形滚动过去
         mSuccessPath = new Path();
         mSuccessPath.moveTo(0, 0);
         mSuccessPath.rLineTo(width, 0);
@@ -190,23 +205,6 @@ public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
         mSuccessPath.rLineTo(-width, 0);
         mSuccessPath.close();
     }
-
-    @Override
-    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-        super.onSizeChanged(w, h, oldw, oldh);
-        mWidth = w;
-        mHeight = h;
-        //动画区域 会用到宽高
-        createMatchAnim();
-
-        post(new Runnable() {
-            @Override
-            public void run() {
-                createCaptcha();
-            }
-        });
-    }
-
 
     //生成验证码区域
     public void createCaptcha() {
@@ -223,9 +221,11 @@ public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
 
     //生成验证码Path
     private void createCaptchaPath() {
+        //原本打算随机生成gap，后来发现 宽度/3 效果比较好，
         int gap = mRandom.nextInt(mCaptchaWidth / 2);
         gap = mCaptchaWidth / 3;
 
+        //随机生成验证码阴影左上角 x y 点，
         mCaptchaX = mRandom.nextInt(mWidth - mCaptchaWidth - gap);
         mCaptchaY = mRandom.nextInt(mHeight - mCaptchaHeight - gap);
         Log.d(TAG, "createCaptchaPath() called mWidth:" + mWidth + ", mHeight:" + mHeight + ", mCaptchaX:" + mCaptchaX + ", mCaptchaY:" + mCaptchaY);
@@ -300,19 +300,21 @@ public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
 
     //抠图
     private Bitmap getMaskBitmap(Bitmap mBitmap, Path mask) {
+        //以控件宽高 create一块bitmap
         Bitmap tempBitmap = Bitmap.createBitmap(mWidth, mHeight, Bitmap.Config.ARGB_8888);
         Log.e(TAG, " getMaskBitmap: width:" + mBitmap.getWidth() + ",  height:" + mBitmap.getHeight());
         Log.e(TAG, " View: width:" + mWidth + ",  height:" + mHeight);
-        //把创建的位图作为画板
+        //把创建的bitmap作为画板
         Canvas mCanvas = new Canvas(tempBitmap);
-        //mCanvas.clipPath(mask);//有锯齿 且无法解决,所以换成XFermode的方法做
+        //有锯齿 且无法解决,所以换成XFermode的方法做
+        //mCanvas.clipPath(mask);
         // 抗锯齿
         mCanvas.setDrawFilter(new PaintFlagsDrawFilter(0, Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG));
         //绘制用于遮罩的圆形
         mCanvas.drawPath(mask, mMaskPaint);
         //设置遮罩模式(图像混合模式)
         mMaskPaint.setXfermode(mPorterDuffXfermode);
-        //考虑到scaleType等因素，要用Matrix对Bitmap进行缩放
+        //★考虑到scaleType等因素，要用Matrix对Bitmap进行缩放
         mCanvas.drawBitmap(mBitmap, getImageMatrix(), mMaskPaint);
         mMaskPaint.setXfermode(null);
         return tempBitmap;
@@ -322,7 +324,10 @@ public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+        //继承自ImageView，所以Bitmap，ImageView已经帮我们draw好了。
+        //我只在上面绘制和验证码相关的部分，
         if (isMatchMode) {
+            //首先绘制验证码阴影
             if (mCaptchaPath != null) {
                 canvas.drawPath(mCaptchaPath, mPaint);
             }
@@ -341,12 +346,13 @@ public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
 
 
             //绘制滑块
+            // isDrawMask  绘制失败闪烁动画用
             if (null != mMaskBitmap && null != mMaskShadowBitmap && isDrawMask) {
                 // 先绘制阴影
                 canvas.drawBitmap(mMaskShadowBitmap, -mCaptchaX + mDragerOffset, 0, mMaskShadowPaint);
                 canvas.drawBitmap(mMaskBitmap, -mCaptchaX + mDragerOffset, 0, null);
             }
-
+            //绘制成功，白光扫过的动画，这一块动画感觉不完美，有提高空间
             if (isShowSuccessAnim) {
                 canvas.translate(mSuccessAnimOffset, 0);
                 canvas.drawPath(mSuccessPath, mSuccessPaint);
@@ -360,6 +366,7 @@ public class SwipeCaptchaView extends ImageView implements ISwipeCaptcha {
      */
     public void matchCaptcha(final OnCaptchaMatchCallback onCaptchaMatchCallback) {
         if (null != onCaptchaMatchCallback && isMatchMode) {
+            //这里验证逻辑，是通过比较，拖拽的距离 和 验证码起点x坐标。 3dp以内算是验证成功。
             if (Math.abs(mDragerOffset - mCaptchaX) < TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 3, getResources().getDisplayMetrics())) {
                 onCaptchaMatchCallback.matchSuccess(this);
                 Log.d(TAG, "matchCaptcha() true: mDragerOffset:" + mDragerOffset + ", mCaptchaX:" + mCaptchaX);
