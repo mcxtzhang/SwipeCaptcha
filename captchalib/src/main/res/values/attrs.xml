@@ -3,5 +3,6 @@
     <declare-styleable name="SwipeCaptchaView">
         <attr name="captchaWidth" format="dimension"/>
         <attr name="captchaHeight" format="dimension"/>
+        <attr name="matchDeviation" format="dimension"/>
     </declare-styleable>
 </resources>

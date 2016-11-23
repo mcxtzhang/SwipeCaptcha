@@ -66,6 +66,10 @@ public class SwipeCaptchaView extends ImageView {
     //滑块的位移
     private int mDragerOffset;
 
+    //是否处于验证模式，在验证成功后 为false，其余情况为true
+    private boolean isMatchMode;
+    //验证的误差允许值
+    private float mMatchDeviation;
     //验证失败的闪烁动画
     private ValueAnimator mFailAnim;
     //验证成功的白光一闪动画
@@ -75,8 +79,6 @@ public class SwipeCaptchaView extends ImageView {
     private int mSuccessAnimOffset;//动画的offset
     private Path mSuccessPath;//成功动画 平行四边形Path
 
-    //是否处于验证模式，在验证成功后 为false，其余情况为true
-    private boolean isMatchMode;
 
     public SwipeCaptchaView(Context context) {
         this(context, null);
@@ -96,6 +98,7 @@ public class SwipeCaptchaView extends ImageView {
                 TypedValue.COMPLEX_UNIT_SP, 16, getResources().getDisplayMetrics());
         mCaptchaHeight = defaultSize;
         mCaptchaWidth = defaultSize;
+        mMatchDeviation = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 3, getResources().getDisplayMetrics());
         TypedArray ta = context.getTheme().obtainStyledAttributes(attrs, R.styleable.SwipeCaptchaView, defStyleAttr, 0);
         int n = ta.getIndexCount();
         for (int i = 0; i < n; i++) {
@@ -104,6 +107,8 @@ public class SwipeCaptchaView extends ImageView {
                 mCaptchaHeight = (int) ta.getDimension(attr, defaultSize);
             } else if (attr == R.styleable.SwipeCaptchaView_captchaWidth) {
                 mCaptchaWidth = (int) ta.getDimension(attr, defaultSize);
+            } else if (attr == R.styleable.SwipeCaptchaView_matchDeviation) {
+                mMatchDeviation = ta.getDimension(attr, mMatchDeviation);
             }
         }
         ta.recycle();
@@ -373,7 +378,7 @@ public class SwipeCaptchaView extends ImageView {
     public void matchCaptcha() {
         if (null != onCaptchaMatchCallback && isMatchMode) {
             //这里验证逻辑，是通过比较，拖拽的距离 和 验证码起点x坐标。 3dp以内算是验证成功。
-            if (Math.abs(mDragerOffset - mCaptchaX) < TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 3, getResources().getDisplayMetrics())) {
+            if (Math.abs(mDragerOffset - mCaptchaX) < mMatchDeviation) {
                 onCaptchaMatchCallback.matchSuccess(this);
                 Log.d(TAG, "matchCaptcha() true: mDragerOffset:" + mDragerOffset + ", mCaptchaX:" + mCaptchaX);
                 //matchSuccess();
