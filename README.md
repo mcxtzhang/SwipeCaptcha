@@ -6,7 +6,51 @@ Android 平台的滑动验证码。
 博文：http://gold.xitu.io/post/5835660261ff4b0061f28f54
 
 ![我们的Demo,Ac娘镇楼](http://ac-mhke0kuv.clouddn.com/7fcb58653e358b9ec003.gif)
-  
+
+# Usage 用法：
+Step 1. Add the JitPack repository to your build file
+在项目根build.gradle文件中增加JitPack仓库依赖。
+```
+    allprojects {
+		repositories {
+			...
+			maven { url "https://jitpack.io" }
+		}
+	}
+```
+Step 2. Add the dependency
+```
+    dependencies {
+	        compile 'com.github.mcxtzhang:SwipeCaptcha:V1.0.0'
+	}
+```
+
+
+Step 3. 
+```
+    <com.mcxtzhang.captchalib.SwipeCaptchaView
+        android:id="@+id/swipeCaptchaView"
+        android:layout_width="300dp"
+        android:layout_height="200dp"
+        android:layout_centerHorizontal="true"
+        android:scaleType="centerCrop"
+        tools:src="@drawable/pic11"
+        app:captchaHeight="30dp"
+        app:captchaWidth="30dp"/>
+
+    <SeekBar
+        android:id="@+id/dragBar"
+        android:layout_width="320dp"
+        android:layout_height="60dp"
+        android:layout_below="@id/swipeCaptchaView"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="30dp"
+        android:progressDrawable="@drawable/dragbg"
+        android:thumb="@drawable/thumb_bg"/>
+```
+
+
+
 
 那么本控件包含不仅包含以下功能：
 * 随机区域**起点(左上角x,y)**生成一个验证码阴影。
