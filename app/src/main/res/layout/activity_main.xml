@@ -13,9 +13,10 @@
     tools:context="com.mcxtzhang.swipecaptcha.MainActivity">
 
     <com.mcxtzhang.captchalib.SwipeCaptchaView
+        android:visibility="gone"
         android:id="@+id/swipeCaptchaView"
-        android:layout_width="300dp"
-        android:layout_height="200dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
         android:scaleType="centerCrop"
         tools:src="@drawable/pic11"
@@ -23,6 +24,7 @@
         app:captchaWidth="30dp"/>
 
     <SeekBar
+        android:visibility="gone"
         android:id="@+id/dragBar"
         android:layout_width="320dp"
         android:layout_height="60dp"
@@ -33,6 +35,7 @@
         android:thumb="@drawable/thumb_bg"/>
 
     <Button
+        android:visibility="gone"
         android:id="@+id/btnChange"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -53,4 +56,9 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="@color/colorPrimaryDark"/>-->
+
+    <ImageView
+        android:id="@+id/aaa"
+        android:layout_width="100dp"
+        android:layout_height="100dp"/>
 </RelativeLayout>

@@ -1,16 +1,14 @@
 package com.mcxtzhang.swipecaptcha;
 
-import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.request.animation.GlideAnimation;
-import com.bumptech.glide.request.target.SimpleTarget;
 import com.mcxtzhang.captchalib.SwipeCaptchaView;
 
 public class MainActivity extends AppCompatActivity {
@@ -19,6 +17,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        //Fresco.initialize(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mSwipeCaptchaView = (SwipeCaptchaView) findViewById(R.id.swipeCaptchaView);
@@ -68,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         //测试从网络加载图片是否ok
-        Glide.with(this)
+/*        Glide.with(this)
                 .load("http://www.investide.cn/data/edata/image/20151201/20151201180507_281.jpg")
                 .asBitmap()
                 .into(new SimpleTarget<Bitmap>() {
@@ -77,6 +76,36 @@ public class MainActivity extends AppCompatActivity {
                         mSwipeCaptchaView.setImageBitmap(resource);
                         mSwipeCaptchaView.createCaptcha();
                     }
-                });
+                });*/
+
+/*        mSwipeCaptchaView.post(new Runnable() {
+            @Override
+            public void run() {
+                mSwipeCaptchaView.setImageResource(R.drawable.pic8);
+                mSwipeCaptchaView.createCaptcha();
+            }
+        });*/
+        Glide.with(this)
+                //.load("android.resource://com.mcxtzhang.swipecaptcha/drawable/"+R.drawable.test)
+                .load("http://pic.anlaiye.com.cn/f905e87b5fb04d1dab80084dcc78151e_240x240.gif")
+                .asGif()
+                .into((ImageView) findViewById(R.id.aaa));
+/*        Picasso.with(this)
+                .load("http://pic.anlaiye.com.cn/f905e87b5fb04d1dab80084dcc78151e_240x240.gif")
+                .into(mSwipeCaptchaView);*/
+
+
+
+
+/*        Uri uri = Uri.parse("http://pic.anlaiye.com.cn/f905e87b5fb04d1dab80084dcc78151e_240x240.gif");
+        SimpleDraweeView draweeView = (SimpleDraweeView) findViewById(R.id.my_image_view);
+
+        DraweeController draweeController =
+                Fresco.newDraweeControllerBuilder()
+                        .setUri(uri)
+                        .setAutoPlayAnimations(true) // 设置加载图片完成后是否直接进行播放
+                        .build();
+        draweeView.setController(draweeController);*/
+
     }
 }
