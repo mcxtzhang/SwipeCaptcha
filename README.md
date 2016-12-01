@@ -3,7 +3,7 @@ Swipe captcha of Android platform。
 Android 平台的滑动验证码。
 
 **在 Android端app上，自定义View，仿一个斗鱼web端滑动验证码**。
-博文：http://gold.xitu.io/post/5835660261ff4b0061f28f54
+博文：http://blog.csdn.net/zxt0601/article/details/53315975
 
 ![我们的Demo,Ac娘镇楼](http://ac-mhke0kuv.clouddn.com/7fcb58653e358b9ec003.gif)
 
