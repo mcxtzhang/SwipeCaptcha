@@ -206,8 +206,8 @@ public class SwipeCaptchaView extends ImageView {
             }
         });
         mSuccessPaint = new Paint();
-        mSuccessPaint.setShader(new LinearGradient(0, 0, width, 0, new int[]{
-                0x11ffffff, 0x88ffffff}, null,
+        mSuccessPaint.setShader(new LinearGradient(0, 0, width/2*3, mHeight, new int[]{
+                0x00ffffff, 0x88ffffff}, new float[]{0,0.5f},
                 Shader.TileMode.MIRROR));
         //模仿斗鱼 是一个平行四边形滚动过去
         mSuccessPath = new Path();
