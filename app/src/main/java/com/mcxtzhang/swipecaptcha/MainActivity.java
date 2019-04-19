@@ -11,18 +11,19 @@ import android.widget.Toast;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
+import com.mcxtzhang.captchalib.CannotTouchSeekBar;
 import com.mcxtzhang.captchalib.SwipeCaptchaView;
 
 public class MainActivity extends AppCompatActivity {
     SwipeCaptchaView mSwipeCaptchaView;
-    SeekBar mSeekBar;
+    CannotTouchSeekBar mSeekBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mSwipeCaptchaView = (SwipeCaptchaView) findViewById(R.id.swipeCaptchaView);
-        mSeekBar = (SeekBar) findViewById(R.id.dragBar);
+        mSeekBar = (CannotTouchSeekBar) findViewById(R.id.dragBar);
         findViewById(R.id.btnChange).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

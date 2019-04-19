@@ -22,7 +22,7 @@
         app:captchaHeight="30dp"
         app:captchaWidth="30dp"/>
 
-    <SeekBar
+    <com.mcxtzhang.captchalib.CannotTouchSeekBar
         android:id="@+id/dragBar"
         android:layout_width="320dp"
         android:layout_height="60dp"
